@@ -242,6 +242,9 @@ pool
           `Connected to PostgreSQL as user '${dbUser}' on database '${dbName}'`,
         );
 
+
+
+        
         console.log(`App listening on port http://localhost:${port}`);
       });
   })
