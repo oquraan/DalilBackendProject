@@ -4,34 +4,39 @@ var cors = require("cors");
 
 const app = express();
 const { Pool } = require("pg");
-
+app.use(express.json());
 app.use(cors());
 require("dotenv").config();
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Welcom Dalil " });
 });
 
-app.get("/api/expenses", (req, res) => {
-  res.json({
-    id: 1,
-    title: "Lunch",
-    amount: 4.5,
-    category: "Food",
-    date: "2026-01-15",
-  });
-});
+// app.get("/api/expenses", (req, res) => {
+//   res.json({
+//     id: 1,
+//     title: "Lunch",
+//     amount: 4.5,
+//     category: "Food",
+//     date: "2026-01-15",
+//   });
+// });
 
-app.get("/api/getAllExpenses", async (req, res) => {
+app.get("/api/expenses", async (req, res) => {
   try {
-    let allExpenses = await pool.query(`
-    select * from expenses  `);
+    let allExpenses = await pool.query(`select  id, 
+        title, 
+        category, 
+        amount::float8, 
+        to_char(date, 'YYYY-MM-DD') as date from expenses  `);
     if (allExpenses.rows.length == 0)
-      res.status(404).json({ message: "dont have  any expenses" });
+      return res.status(404).json({ message: "dont have  any expenses" });
     res.json(allExpenses.rows);
-  } catch (error) {}
+  } catch (error) {
+    console.log(error.message);
+  }
 });
 
-app.get("/api/getAllExpenses/:id", async (req, res) => {
+app.get("/api/expenses/:id", async (req, res) => {
   const { id } = req.params;
 
   if (isNaN(id))
@@ -40,7 +45,11 @@ app.get("/api/getAllExpenses/:id", async (req, res) => {
   try {
     let allExpenses = await pool.query(
       `
-    select * from expenses where  id=$1 `,
+    select id, 
+        title, 
+        category, 
+        amount::float8, 
+        to_char(date, 'YYYY-MM-DD') as date from expenses where  id=$1 `,
       [id],
     );
     if (allExpenses.rows.length == 0)
@@ -53,6 +62,161 @@ app.get("/api/getAllExpenses/:id", async (req, res) => {
     res.status(500).json(error.message);
   }
 });
+
+app.post("/api/expenses", async (req, res) => {
+  // {
+  // "id": 1,
+  // "title": "Lunch",
+  // "amount": 4.5,
+  // "category": "Food",
+  // "date": "2026-01-15"
+  // }
+
+  const { title, amount, category, date } = req.body;
+  if (!title)
+    return res.status(400).json({ message: "Title field is required" });
+
+  if (!amount)
+    return res.status(400).json({ message: "Amount field is required" });
+  else if (amount <= 0)
+    return res
+      .status(400)
+      .json({ message: "Amount field must be greater than zero  " });
+
+  const allowedCategories = [
+    "Food",
+    "Transport",
+    "Bills",
+    "Entertainment",
+    "Other",
+  ];
+  if (!category)
+    return res.status(400).json({ message: "category field is required" });
+  else if (!allowedCategories.includes(category))
+    return res.status(400).json({
+      message:
+        "Category must be one of these category   :Food, Transport, Bills, Entertainment, Other ",
+    });
+
+  if (!date) return res.status(400).json({ message: "date field is required" });
+
+  try {
+    const newExpense = await pool.query(
+      `INSERT INTO  expenses (title,amount,category,date) values($1,$2,$3,$4) RETURNING *`,
+      [title, amount, category, date],
+    );
+    console.log("added sucssfuly ");
+    res.status(201).json(newExpense.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.put("/api/expenses/:id", async (req, res) => {
+  // {
+  // "id": 1,
+  // "title": "Lunch",
+  // "amount": 4.5,
+  // "category": "Food",
+  // "date": "2026-01-15"
+  // }
+  const { id } = req.params;
+  const { title, amount, category, date } = req.body;
+  if (isNaN(id))
+    return res.status(400).json({ message: "ID must   be  a number  " });
+  if (!title)
+    return res.status(400).json({ message: "Title field is required" });
+
+  if (!amount)
+    return res.status(400).json({ message: "Amount field is required" });
+  else if (amount <= 0)
+    return res
+      .status(400)
+      .json({ message: "Amount field must be greater than zero  " });
+
+  const allowedCategories = [
+    "Food",
+    "Transport",
+    "Bills",
+    "Entertainment",
+    "Other",
+  ];
+  if (!category)
+    return res.status(400).json({ message: "category field is required" });
+  else if (!allowedCategories.includes(category))
+    return res.status(400).json({
+      message:
+        "Category must be one of these category   :Food, Transport, Bills, Entertainment, Other ",
+    });
+
+  if (!date) return res.status(400).json({ message: "date field is required" });
+
+  try {
+    const newExpense = await pool.query(
+      `Update    expenses  set title=$1, amount=$2 ,category=$3, date=$4 where id=$5 RETURNING *`,
+      [title, amount, category, date, id],
+    );
+    if (newExpense.rows.length === 0)
+      return res.status(404).json({ message: "The Expense not found   " });
+    console.log("updated  sucssfuly ");
+    res.json(newExpense.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+app.delete("/api/expenses/:id", async (req, res) => {
+  const { id } = req.params;
+  if (isNaN(id))
+    return res.status(400).json({ message: "ID must   be  a number  " });
+
+  try {
+    const newExpense = await pool.query(
+      `delete from expenses where id=$1 RETURNING *`,
+      [id],
+    );
+    if (newExpense.rows.length === 0)
+      return res.status(404).json({ message: "The Expense not found   " });
+    console.log("ID ${id} deleted successfully ");
+    res.json({
+      message: "Deleted Successfully",
+      deletedExpense: newExpense.rows[0],
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+// app.get("/api/getAllExpenses", async (req, res) => {
+//   try {
+//     let allExpenses = await pool.query(`
+//     select * from expenses  `);
+//     if (allExpenses.rows.length == 0)
+//       return res.status(404).json({ message: "dont have  any expenses" });
+//     res.json(allExpenses.rows);
+//   } catch (error) {}
+// });
+
+// app.get("/api/getAllExpenses/:id", async (req, res) => {
+//   const { id } = req.params;
+
+//   if (isNaN(id))
+//     return res.status(404).json({ message: "id should be a number  " });
+
+//   try {
+//     let allExpenses = await pool.query(
+//       `
+//     select * from expenses where  id=$1 `,
+//       [id],
+//     );
+//     if (allExpenses.rows.length == 0)
+//       return res
+//         .status(404)
+//         .json({ message: "dont have any record in this id " });
+
+//     res.json(allExpenses.rows);
+//   } catch (error) {
+//     res.status(500).json(error.message);
+//   }
+// });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
