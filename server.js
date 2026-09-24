@@ -1,3 +1,95 @@
+const express = require("express");
+
+var cors = require("cors");
+
+const app = express();
+const { Pool } = require("pg");
+
+app.use(cors());
+require("dotenv").config();
+app.get("/api/hello", (req, res) => {
+  res.json({ message: "Welcom Dalil " });
+});
+
+app.get("/api/expenses", (req, res) => {
+  res.json({
+    id: 1,
+    title: "Lunch",
+    amount: 4.5,
+    category: "Food",
+    date: "2026-01-15",
+  });
+});
+
+app.get("/api/getAllExpenses", async (req, res) => {
+  try {
+    let allExpenses = await pool.query(`
+    select * from expenses  `);
+    if (allExpenses.rows.length == 0)
+      res.status(404).json({ message: "dont have  any expenses" });
+    res.json(allExpenses.rows);
+  } catch (error) {}
+});
+
+app.get("/api/getAllExpenses/:id", async (req, res) => {
+  const { id } = req.params;
+
+  if (isNaN(id))
+    return res.status(404).json({ message: "id should be a number  " });
+
+  try {
+    let allExpenses = await pool.query(
+      `
+    select * from expenses where  id=$1 `,
+      [id],
+    );
+    if (allExpenses.rows.length == 0)
+      return res
+        .status(404)
+        .json({ message: "dont have any record in this id " });
+
+    res.json(allExpenses.rows);
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+});
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+const port = process.env.PORT || 3000;
+// app.listen(port, () => {
+//   console.log(`app listening on port http://localhost:${port}`);
+// });
+
+pool
+  .connect()
+  .then((client) => {
+    return client
+      .query("SELECT current_database(), current_user")
+      .then((res) => {
+        client.release();
+
+        const dbName = res.rows[0].current_database;
+        const dbUser = res.rows[0].current_user;
+        console.log(" Connected to DB:", res.rows[0]);
+
+        console.log(
+          `Connected to PostgreSQL as user '${dbUser}' on database '${dbName}'`,
+        );
+
+        console.log(`App listening on port http://localhost:${port}`);
+      });
+  })
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`app listening on port http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Could not connect to database:", err);
+  });
+
 // Expense Tracker - backend (Express API + PostgreSQL)
 //
 // PHASE 1
