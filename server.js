@@ -3,18 +3,18 @@ const express = require("express");
 var cors = require("cors");
 
 const app = express();
+require("dotenv").config();
+
 const { Pool } = require("pg");
 app.use(express.json());
-app.use(express.static("public"));
-process.on('uncaughtException', (err) => {
-  console.error('CRITICAL ERROR:', err);
-});
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+app.use(express.static("public"));
+
 app.use(cors());
-require("dotenv").config();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+const port = process.env.PORT || 3000;
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Welcom Dalil " });
 });
@@ -233,10 +233,6 @@ app.delete("/api/expenses/:id", async (req, res) => {
   }
 });
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`App listening on port http://localhost:${port}`);
 });
