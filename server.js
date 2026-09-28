@@ -55,7 +55,7 @@ app.get("/api/expenses", async (req, res) => {
       queryParams.push(category);
       conditions.push(`category = $${queryParams.length}`);
     }
-  
+
     if (month && month !== "") {
       queryParams.push(month);
       conditions.push(`TO_CHAR(date, 'MM') = $${queryParams.length}`);
@@ -71,12 +71,11 @@ app.get("/api/expenses", async (req, res) => {
     if (order && allowedColumns.includes(order)) {
       queryText += ` ORDER BY ${order} `;
       console.log(` ORDER BY ${order} `);
-
     } else {
       console.log(` ORDER BY id DESC `);
       queryText += ` ORDER BY id DESC `;
     }
-  
+
     const allExpenses = await pool.query(queryText, queryParams);
     if (allExpenses.rows.length == 0)
       return res.status(404).json({
@@ -119,8 +118,6 @@ app.get("/api/expenses/:id", async (req, res) => {
 });
 
 app.post("/api/expenses", async (req, res) => {
-
-
   const { title, amount, category, date } = req.body;
   if (!title)
     return res.status(400).json({ message: "Title field is required" });
@@ -162,7 +159,6 @@ app.post("/api/expenses", async (req, res) => {
 });
 
 app.put("/api/expenses/:id", async (req, res) => {
-
   const { id } = req.params;
   const { title, amount, category, date } = req.body;
   if (isNaN(id))
@@ -229,12 +225,10 @@ app.delete("/api/expenses/:id", async (req, res) => {
   }
 });
 
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 const port = process.env.PORT || 3000;
-
 
 pool
   .connect()
@@ -263,4 +257,3 @@ pool
   .catch((err) => {
     console.error("Could not connect to database:", err);
   });
-
