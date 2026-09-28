@@ -22,14 +22,102 @@ app.get("/api/hello", (req, res) => {
 // });
 
 app.get("/api/expenses", async (req, res) => {
+  let category = req.query.category;
+  let order = req.query.orderBy;
+  let month = req.query.month;
+  let title = req.query.title;
+
+  const validMonths = [
+    "",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
+  ];
+  if (!validMonths.includes(month)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid month format. Please use '01' to '12'." });
+  }
+  // const allowedColumns = ['id', 'title', 'amount', 'category', 'date'];
+  console.log(
+    "1.ca :" + category + "   " + "2.order " + order + "  3. Month :  " + month,
+  );
+
   try {
-    let allExpenses = await pool.query(`select  id, 
+    let queryText;
+
+    queryText = `select  id, 
         title, 
         category, 
         amount::float8, 
-        to_char(date, 'YYYY-MM-DD') as date from expenses  `);
+        to_char(date, 'YYYY-MM-DD') as date from expenses   `;
+    let queryParams = [];
+    let conditions = [];
+    if (category && category !== "") {
+      // queryText += `Where category=$1`;
+      queryParams.push(category);
+      conditions.push(`category = $${queryParams.length}`);
+    }
+    // if (month && month !== "" && category && category !== "") {
+    //   queryText += `and TO_CHAR(date, 'MM') =$2`;
+    //   queryParams.push(month);
+    // } else
+    if (month && month !== "") {
+      // queryText += ` TO_CHAR(date, 'MM') =$2`;
+      queryParams.push(month);
+      conditions.push(`TO_CHAR(date, 'MM') = $${queryParams.length}`);
+    }
+    if (title && title !== "") {
+      queryParams.push(title);
+      conditions.push(`title = $${queryParams.length}`);
+    }
+    if (conditions.length > 0) {
+      queryText += ` WHERE ` + conditions.join(" AND ");
+    }
+    const allowedColumns = ["id", "title", "amount", "category", "date"];
+    if (order && allowedColumns.includes(order)) {
+      queryText += ` ORDER BY ${order} `;
+      console.log(` ORDER BY ${order} `);
+
+      // queryParams.push(order);
+    } else {
+      console.log(` ORDER BY id DESC `);
+      queryText += ` ORDER BY id DESC `;
+    }
+    // if (!category || category === "") {
+    //   allExpenses = await pool.query(`select  id,
+    //     title,
+    //     category,
+    //     amount::float8,
+    //     to_char(date, 'YYYY-MM-DD') as date from expenses ORDER BY id desc  `);
+    // } else {
+    //   allExpenses = await pool.query(
+    //     `select  id,
+    //     title,
+    //     category,
+    //     amount::float8,
+    //     to_char(date, 'YYYY-MM-DD') as date from expenses where category=$1 ORDER BY id desc  `,
+    //     [category],
+    //   );
+    // }
+
+    const allExpenses = await pool.query(queryText, queryParams);
     if (allExpenses.rows.length == 0)
-      return res.status(404).json({ message: "dont have  any expenses" });
+      return res.status(404).json({
+        message: "dont have  any expenses",
+        month: month,
+        order: order,
+        category: category,
+      });
     res.json(allExpenses.rows);
   } catch (error) {
     console.log(error.message);
@@ -242,9 +330,6 @@ pool
           `Connected to PostgreSQL as user '${dbUser}' on database '${dbName}'`,
         );
 
-
-
-        
         console.log(`App listening on port http://localhost:${port}`);
       });
   })
