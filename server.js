@@ -12,10 +12,11 @@ app.get("/api/hello", (req, res) => {
 });
    
 app.get("/api/expenses", async (req, res) => {
-  let category = req.query.category;
-  let order = req.query.orderBy;
-  let month = req.query.month;
-  let title = req.query.title;
+  let category = req.query.category || "";
+  let order = req.query.orderBy || "";
+  let month = req.query.month || "";
+  let title = req.query.title || "";
+
 
   const validMonths = [
     "",
