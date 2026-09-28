@@ -5,18 +5,19 @@ var cors = require("cors");
 const app = express();
 const { Pool } = require("pg");
 app.use(express.json());
+app.use(express.static("public"));
+
 app.use(cors());
 require("dotenv").config();
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Welcom Dalil " });
 });
-   
+
 app.get("/api/expenses", async (req, res) => {
   let category = req.query.category || "";
   let order = req.query.orderBy || "";
   let month = req.query.month || "";
   let title = req.query.title || "";
-
 
   const validMonths = [
     "",
@@ -230,7 +231,9 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 const port = process.env.PORT || 3000;
-
+app.listen(port, () => {
+  console.log(`App listening on port http://localhost:${port}`);
+});
 pool
   .connect()
   .then((client) => {
@@ -250,11 +253,11 @@ pool
         console.log(`App listening on port http://localhost:${port}`);
       });
   })
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`app listening on port http://localhost:${port}`);
-    });
-  })
+  // .then(() => {
+  //   app.listen(port, () => {
+  //     console.log(`app listening on port http://localhost:${port}`);
+  //   });
+  // })
   .catch((err) => {
     console.error("Could not connect to database:", err);
   });
