@@ -6,7 +6,13 @@ const app = express();
 const { Pool } = require("pg");
 app.use(express.json());
 app.use(express.static("public"));
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL ERROR:', err);
+});
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 app.use(cors());
 require("dotenv").config();
 app.get("/api/hello", (req, res) => {
