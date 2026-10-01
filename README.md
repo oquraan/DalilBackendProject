@@ -1,5 +1,6 @@
-https://omaressamquraan.com/
-[website demo](https://drive.google.com/file/d/1Ho9mgxp99ubOV95-Q8Oszm9nWF62T1HB/view?usp=sharing)
+- **Website Live**: [https://omaressamquraan.com/](https://omaressamquraan.com/)
+- **Video Demo**: [View Demo on Google Drive](https://drive.google.com/file/d/1Ho9mgxp99ubOV95-Q8Oszm9nWF62T1HB/view?usp=sharing)
+- **GitHub Repository**: [https://github.com/oquraan/DalilBackendProject](https://github.com/oquraan/DalilBackendProject)
 
 # Expense Tracker — Backend API
 
